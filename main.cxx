@@ -8,6 +8,11 @@ int main() {
 	//test_process();
 	//test_anonated_process();
 	//attaching_to_reciever();
-	test_executor();
+	//test_executor();
+	//test_recovery();
+	//then_example();
+	//then_example2();
+	//test_packaged_task();
+	test_when_all();
 }
 

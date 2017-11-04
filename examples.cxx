@@ -3,6 +3,7 @@
 #include <iostream>
 #include <thread>
 
+
 #include "stlab/concurrency/channel.hpp"
 #include "stlab/concurrency/default_executor.hpp"
 
@@ -316,4 +317,84 @@ void test_executor() {
 	}
 
 	
+}
+
+
+
+#include "stlab/concurrency/future.hpp"
+
+void test_recovery() {
+	auto x = async(default_executor, [] {
+		throw runtime_error("Vogons did arrive!");
+		return 42;
+	});
+
+	auto r = x.recover([](future<int> f) {
+		try {
+			auto answer = f.get_try().value();
+			cout << "The answer is " << answer << '\n';
+		}
+		catch (const exception& ex) {
+			cout << "The error \"" << ex.what() << "\" happened!\n";
+		}
+	});
+
+	// Waiting just for illustrational purpose
+	while (!r.get_try()) { this_thread::sleep_for(chrono::milliseconds(1)); }
+}
+
+void then_example() {
+	auto x = async(default_executor, [] { return 42; });
+
+	auto y = x.then([](int x) { printf("Result %d \n", x); });
+
+	// Waiting just for illustrational purpose
+	while (!y.get_try()) { this_thread::sleep_for(chrono::milliseconds(1)); }
+}
+
+
+void then_example2() {
+	auto x = async(default_executor, [] { return 42; });
+
+	auto c1 = x.then([](int x) { printf("Split A %d \n", x); });
+	auto c2 = x.then([](int x) { printf("Split B %d \n", x); });
+
+	// Waiting just for illustrational purpose
+	while (!c1.get_try()) { this_thread::sleep_for(chrono::milliseconds(1)); }
+	while (!c2.get_try()) { this_thread::sleep_for(chrono::milliseconds(1)); }
+}
+
+
+void test_packaged_task() {
+	auto p = package<int(int)>(immediate_executor, [](int x) {
+		cout << "task thread id = " << this_thread::get_id() << "\n";
+		return x + x; });
+	auto packagedTask = p.first;
+	auto f = p.second;
+
+	packagedTask(21);
+
+	// Waiting just for illustrational purpose
+	while (!f.get_try()) { this_thread::sleep_for(chrono::milliseconds(1)); }
+	cout << "main thread id = " << this_thread::get_id() << "\n";
+	cout << "The answer is " << f.get_try().value() << "\n";
+}
+
+void test_when_all() {
+	auto argument1 = async(default_executor, [] { 
+		cout << "argument 1 id = " << this_thread::get_id() << "\n";
+		return 42; });
+	auto argument2 = async(default_executor, [] { 
+		cout << "argument2 id = " << this_thread::get_id() << "\n";
+		return string("The answer is"); });
+
+	auto result = when_all(default_executor, [](int answer, std::string text) {
+		cout << "when all id = " << this_thread::get_id() << "\n";
+		cout << text << " " << answer << '\n';
+	}, argument1, argument2);
+
+	cout << "main id = " << this_thread::get_id() << "\n";
+	this_thread::sleep_for(chrono::milliseconds(10000));
+	// Waiting just for illustrational purpose
+	//while (!result.get_try()) { this_thread::sleep_for(chrono::milliseconds(1)); }
 }

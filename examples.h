@@ -15,4 +15,14 @@ void attaching_to_reciever();
 
 void test_executor();
 
+void test_recovery();
+
+void then_example();
+
+void then_example2();
+
+void test_packaged_task();
+
+void test_when_all();
+
 #endif//_EXAMPLES_H__
